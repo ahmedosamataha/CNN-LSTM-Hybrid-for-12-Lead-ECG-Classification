@@ -19,15 +19,15 @@
 
 \title{Deep Neural Network Architectures for 12-Lead ECG Classification: A CNN-LSTM Hybrid Approach}
 
-\author{\IEEEauthorblockN{Author Name}
-\IEEEauthorblockA{Department of Computer Science and Engineering\\
-CSE672 Machine Learning / CSE616 Neural Networks and Their Applications\\
-Email: author@university.edu}}
+\author{\IEEEauthorblockN{Authors\\Ahmed Osama Mohamed Taha (2400044)\\Mohamed Alharouni (2400497)}
+\IEEEauthorblockA{Department of Computer and Systems Engineering - ASU\\
+CSE672 Machine Learning \\
+Submitted to: Dr. Mahmoud Khalil - Dr. Hazem Abbas}}
 
 \maketitle
 
 \begin{abstract}
-Automated electrocardiogram (ECG) classification is critical for scalable cardiac diagnostics. This paper presents a CNN-LSTM hybrid architecture that combines 1D Convolutional Neural Networks for morphological feature extraction with Bidirectional Long Short-Term Memory networks for temporal dependency modeling, applied to multi-label classification of 12-lead ECG recordings. We evaluate our approach on the PTB-XL dataset (21,799 recordings) across five superclasses of cardiac abnormalities. Across the saved runs, the strongest configuration uses a learning rate of $3\times10^{-4}$ and dropout 0.15; on that run, the CNN-LSTM model achieves a macro-averaged AUC of 0.926 and F1 score of 0.682, improving macro F1 over the CNN-only baseline by 0.048. We incorporate Squeeze-and-Excitation blocks for lead attention, Multi-Head Attention for temporal aggregation, and Focal Loss for handling class imbalance. Comprehensive ablation studies and cross-run comparisons validate the contribution of each architectural component and training choice.
+Automated electrocardiogram (ECG) classification is critical for scalable cardiac diagnostics. This paper presents a CNN-LSTM hybrid architecture that combines 1D Convolutional Neural Networks for morphological feature extraction with Bidirectional Long Short-Term Memory networks for temporal dependency modeling, applied to multi-label classification of 12-lead ECG recordings. We evaluate our approach on the PTB-XL dataset (20373 recordings) across five superclasses of cardiac abnormalities. Across the saved runs, the strongest configuration uses a learning rate of $3\times10^{-4}$ and dropout 0.15; on that run, the CNN-LSTM model achieves a macro-averaged AUC of 0.926 and F1 score of 0.682, improving macro F1 over the CNN-only baseline by 0.048. We incorporate Squeeze-and-Excitation blocks for lead attention, Multi-Head Attention for temporal aggregation, and Focal Loss for handling class imbalance. Comprehensive ablation studies and cross-run comparisons validate the contribution of each architectural component and training choice.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -72,7 +72,7 @@ Our work builds on these advances by combining CNN feature extraction with bidir
 
 \subsection{PTB-XL Dataset}
 
-We use the PTB-XL dataset \cite{wagner2020ptbxl}, which contains 21,799 clinical 12-lead ECG recordings of 10-second duration from 18,869 patients, sampled at 500\,Hz. Each recording is annotated with one or more diagnostic labels organized hierarchically into superclasses.
+We use the PTB-XL dataset \cite{wagner2020ptbxl}, which contains 20373 clinical 12-lead ECG recordings of 10-second duration from 18,869 patients, sampled at 500\,Hz. Each recording is annotated with one or more diagnostic labels organized hierarchically into superclasses.
 
 We focus on the five diagnostic superclasses:
 \begin{itemize}
@@ -275,17 +275,11 @@ HYP  & 0.881 & \textbf{0.889} & 0.209 & \textbf{0.431} \\
 \end{tabular}
 \end{table}
 
-Key observations:
-\begin{itemize}
-    \item The CNN-LSTM achieves the largest F1 improvement on \textbf{HYP} (+107\% over the CNN-only baseline on the best run), which is the most underrepresented class and the clearest evidence that temporal modeling helps minority-class detection.
-    \item \textbf{STTC} shows the strongest hybrid gain, with both the best AUC and the best F1 for that class, consistent with ST/T changes being temporal phenomena.
-    \item \textbf{MI} and \textbf{CD} remain CNN-leaning on AUC, which suggests the morphological backbone still carries most of the ranking signal for those classes.
-    \item The tuned run improves the balance between ranking and thresholded classification, with the CNN-LSTM closing the AUC gap seen in earlier runs and winning on macro F1.
-\end{itemize}
+This class-wise comparison shows a consistent pattern: the CNN-only model remains strong when the task is dominated by morphological cues, while the CNN-LSTM gains clear advantage when temporal context helps resolve subtle abnormalities. In particular, the largest hybrid gain appears on \textbf{HYP}, where F1 improves by +107\% over the CNN-only baseline on the best run, despite HYP being the rarest class. \textbf{STTC} also favors the hybrid model on both AUC and F1, which is consistent with ST/T deviations being temporally structured. By contrast, \textbf{MI} and \textbf{CD} remain slightly CNN-leaning on AUC, suggesting that strong local morphology still explains much of the ranking signal for those classes.
 
 \subsection{Training Dynamics}
 
-Both models converge within roughly 30--35 epochs. In the best-tuned run, the CNN-only model reaches best validation AUC at epoch 33 (0.939), while the CNN-LSTM peaks at epoch 27 (0.932). The LSTM model converges with a better thresholded trade-off even when its raw ranking metric is close to the CNN baseline.
+Both models converge within roughly 30--35 epochs, but they converge to different operating profiles. In the best-tuned run, the CNN-only model reaches best validation AUC at epoch 33 (0.939), while the CNN-LSTM peaks earlier at epoch 27 (0.932). This earlier convergence with stronger downstream F1 supports the same comparative story: the hybrid architecture does not always maximize ranking metrics, but it improves thresholded decision quality, especially for difficult classes.
 
 \begin{figure}[htbp]
 \centering
@@ -303,7 +297,7 @@ Both models converge within roughly 30--35 epochs. In the best-tuned run, the CN
 
 \subsection{Cross-Run Comparison}
 
-Table~\ref{tab:cross_run} summarizes the saved experiment runs across all hyperparameter settings. The main pattern is stable: the CNN-only model often retains a small AUC advantage on the higher-dropout runs, but the CNN-LSTM usually wins on macro F1. The most successful configuration is the lower learning-rate run ($lr = 3\times10^{-4}$, dropout = 0.15), which improves both models and gives the CNN-LSTM its best balance of ranking and thresholded performance.
+Table~\ref{tab:cross_run} summarizes the saved experiment runs and makes the trade-off explicit. Under heavier regularization (dropout 0.3 and 0.5), the CNN baseline often keeps a small macro-AUC edge, but the CNN-LSTM usually preserves a macro-F1 advantage. When the optimization setup is tuned ($lr = 3\times10^{-4}$ with dropout 0.15), that trade-off narrows and the CNN-LSTM becomes best overall, reaching both the highest macro F1 and the strongest macro AUC among the saved hybrid runs.
 
 \begin{table}[htbp]
 \centering
@@ -323,7 +317,7 @@ $3\times10^{-4}$ & 0.923 & 0.635 & 0.926 & 0.682 & CNN-LSTM \\
 \end{tabular}
 \end{table}
 
-Across these runs, lower dropout and a smaller learning rate consistently improve the CNN-LSTM's F1 score, and the HYP class benefits the most from this tuning. By contrast, heavier dropout and the noisier 0.5 setting compress the advantage between the two models and reduce minority-class sensitivity.
+Across runs, lower dropout and a smaller learning rate consistently improve hybrid robustness, with the largest absolute benefit on HYP. Conversely, the 0.5-dropout setting compresses model differences and reduces minority-class sensitivity, indicating that aggressive regularization disproportionately harms the temporal branch.
 
 \subsection{Ablation Studies}
 
@@ -335,9 +329,9 @@ We evaluate hidden dimensions of 64, 128, and 256. Results show diminishing retu
 
 Comparing Focal Loss ($\gamma=2.0$), standard BCE, and weighted BCE:
 \begin{itemize}
-    \item Focal Loss achieves the best balance between AUC and F1
-    \item Weighted BCE improves recall but at the cost of precision
-    \item Standard BCE underperforms on minority classes (HYP)
+    \item Focal Loss provides the most stable trade-off between macro AUC and macro F1 across settings
+    \item Weighted BCE increases recall but with a measurable precision penalty
+    \item Standard BCE underperforms on minority classes, most notably HYP
 \end{itemize}
 
 \subsubsection{Bidirectional vs.\ Unidirectional LSTM}
@@ -389,9 +383,9 @@ The attention mechanism reveals clinically interpretable patterns---high attenti
 \section{Discussion}
 % ============================================================================
 
-Our results demonstrate that combining CNNs with LSTMs provides complementary benefits for ECG classification. The CNN effectively extracts local morphological features (QRS shape, ST elevation), while the LSTM captures temporal patterns (rhythm regularity, PR interval consistency).
+The results support a comparative interpretation rather than a single-metric winner. The CNN baseline remains a strong ranker and is often competitive on macro AUC, especially in less-tuned or high-dropout runs. The CNN-LSTM, however, is consistently stronger on thresholded metrics and minority-class sensitivity, indicating that temporal context improves decision quality where morphology alone is ambiguous.
 
-The trade-off between AUC and F1 metrics between the two models is notable: the CNN-only model achieves marginally higher AUC (better ranking ability), while the CNN-LSTM achieves significantly better F1 (better classification at a fixed threshold). This suggests the LSTM improves decision boundary calibration, particularly for underrepresented classes.
+A useful way to interpret this trade-off is operational: if the deployment priority is ranking for downstream triage, the CNN baseline remains viable; if the goal is direct label assignment with balanced precision/recall, the CNN-LSTM is preferable. The tuned run ($lr = 3\times10^{-4}$, dropout 0.15) is important because it reduces the usual AUC--F1 tension and allows the hybrid model to perform strongly on both criteria.
 
 \textbf{Limitations.} (1) The PTB-XL dataset, while large, represents a single institution's recording practices. Cross-institutional validation is needed. (2) Our 5-class superclass formulation simplifies the full diagnostic taxonomy. (3) The model processes fixed 10-second windows and cannot handle variable-length recordings without modification.
 
@@ -401,7 +395,18 @@ The trade-off between AUC and F1 metrics between the two models is notable: the 
 \section{Conclusion}
 % ============================================================================
 
-We presented a CNN-LSTM hybrid architecture for multi-label 12-lead ECG classification that combines morphological feature extraction with temporal dependency modeling. Across the saved experiments, the best configuration is the $lr = 3\times10^{-4}$, dropout 0.15 run, where the CNN-LSTM achieves macro-averaged AUC of 0.926 and F1 of 0.682 on the PTB-XL dataset. The most important conclusion from the full run set is that the CNN-LSTM is consistently stronger on thresholded performance, especially for the minority HYP class, while the CNN-only baseline can remain competitive on AUC when the training setup is less tuned. Ablation studies confirm the contribution of bidirectional processing, multi-head attention, and focal loss to the overall performance. The attention mechanism provides clinically interpretable outputs, identifying diagnostically relevant ECG segments.
+We presented a comparative evaluation of a CNN baseline and a CNN-LSTM hybrid for multi-label 12-lead ECG classification on PTB-XL. The best overall setting is the tuned run ($lr = 3\times10^{-4}$, dropout 0.15), where the CNN-LSTM achieves macro AUC 0.926 and macro F1 0.682.
+
+\textbf{Key findings from the full study are:}
+\begin{itemize}
+    \item \textbf{Finding 1:} The CNN-LSTM is the stronger classifier at operating-point metrics, with a consistent macro-F1 advantage across most saved runs.
+    \item \textbf{Finding 2:} The largest hybrid benefit is on the minority HYP class, indicating that temporal modeling improves sensitivity to underrepresented abnormalities.
+    \item \textbf{Finding 3:} The CNN baseline remains competitive on macro AUC in less-tuned settings, showing strong morphology-driven ranking capability.
+    \item \textbf{Finding 4:} Ablations validate that bidirectional sequence modeling, attention-based aggregation, and focal loss each contribute to the final performance profile.
+    \item \textbf{Finding 5:} Attention visualizations align with clinically relevant ECG regions (QRS/ST), improving interpretability without sacrificing overall performance.
+\end{itemize}
+
+Taken together, these results suggest that hybrid temporal modeling is most valuable when the objective is robust thresholded prediction and minority-class detection, while pure CNN modeling remains a strong baseline for ranking-oriented use cases.
 
 Future work will explore transformer-based architectures, cross-dataset generalization, and integration of patient demographic features for improved classification.
 
